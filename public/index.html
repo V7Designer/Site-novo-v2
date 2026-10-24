@@ -338,6 +338,15 @@ a.proj:hover .proj__go { text-decoration: underline; text-underline-offset: 3px;
 @media (max-width: 880px) { .contact { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .form__row { grid-template-columns: 1fr; } }
 
+/* ---------- Outros canais (Instagram e Discord) ---------- */
+.btn--light { border-color: var(--papel); color: var(--papel); }
+.btn--light:hover { background: var(--papel); color: var(--nanquim); }
+.btn-row { display: flex; flex-wrap: wrap; gap: .75rem; }
+.copy { background: none; border: 0; border-bottom: 2px dashed currentColor; cursor: pointer; font-weight: 600; padding: 0; line-height: 1.3; }
+.copy__hint { font-weight: 400; opacity: .8; margin-left: .45rem; font-size: .9em; }
+.alt { margin-top: 1.5rem; font-size: .98rem; max-width: 30rem; }
+.alt a { font-weight: 600; text-underline-offset: 3px; }
+
 /* ---------- Rodapé ---------- */
 .foot { background: var(--nanquim); color: var(--papel); padding: 0 0 2rem; --focus: var(--mostarda); }
 .foot__grid { display: flex; flex-wrap: wrap; gap: 2rem 4rem; justify-content: space-between; align-items: flex-start; padding-top: 2.5rem; border-top: 2px dashed rgba(244,243,239,.25); }
@@ -661,6 +670,8 @@ a.proj:hover .proj__go { text-decoration: underline; text-underline-offset: 3px;
           <a class="btn btn--violet" id="order-wa" href="https://wa.me/5583988655944" target="_blank" rel="noopener">
             <svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg> Pedir no WhatsApp
           </a>
+          <p class="alt">Prefere outro canal? Me chame no <a href="https://www.instagram.com/vini.wdev/" target="_blank" rel="noopener">Instagram @vini.wdev</a> ou adicione no Discord:
+            <button type="button" class="copy" data-copy="anonymbtw" aria-label="Copiar usuário do Discord: anonymbtw">anonymbtw<span class="copy__hint" aria-live="polite">copiar</span></button></p>
         </div>
       </div>
     </section>
@@ -688,15 +699,19 @@ a.proj:hover .proj__go { text-decoration: underline; text-underline-offset: 3px;
         <div>
           <h2 class="h2">Peça seu orçamento</h2>
           <p class="lead" style="margin-top:1rem">O jeito mais rápido é o WhatsApp. Se preferir, deixe seus dados no formulário e eu chamo você.</p>
-          <p style="margin-top:1.75rem">
+          <div class="btn-row" style="margin-top:1.75rem">
             <a class="btn btn--sun" data-wa="Olá Vinícius! Vi seu site e quero fazer um orçamento." href="https://wa.me/5583988655944" target="_blank" rel="noopener">
               <svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg> Chamar no WhatsApp
             </a>
-          </p>
+            <a class="btn btn--light" href="https://www.instagram.com/vini.wdev/" target="_blank" rel="noopener">
+              <svg class="ico ico--line" style="stroke-width:2" aria-hidden="true"><use href="#i-ig"/></svg> Chamar no Instagram
+            </a>
+          </div>
           <div class="contact__direct">
             <a href="tel:+5583988655944">(83) 98865-5944</a>
             <a href="mailto:vini-dev@zohomail.com">vini-dev@zohomail.com</a>
             <a href="https://www.instagram.com/vini.wdev/" target="_blank" rel="noopener">@vini.wdev no Instagram</a>
+            <span>Discord: <button type="button" class="copy" data-copy="anonymbtw" aria-label="Copiar usuário do Discord: anonymbtw">anonymbtw<span class="copy__hint" aria-live="polite">copiar</span></button></span>
           </div>
         </div>
 
@@ -761,6 +776,7 @@ a.proj:hover .proj__go { text-decoration: underline; text-underline-offset: 3px;
       <div>
         <p><strong>WhatsApp</strong><br>(83) 98865-5944</p>
         <p style="margin-top:.8rem"><strong>E-mail</strong><br>vini-dev@zohomail.com</p>
+        <p style="margin-top:.8rem"><strong>Discord</strong><br>anonymbtw</p>
       </div>
     </div>
     <p class="foot__copy">© 2026 Vinícius Tavares</p>
@@ -966,6 +982,21 @@ a.proj:hover .proj__go { text-decoration: underline; text-underline-offset: 3px;
   }
   document.querySelectorAll('#chips input').forEach(function (i) { i.addEventListener('change', orderLink); });
   orderLink();
+
+  /* ---------- Copiar usuário do Discord ---------- */
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    var hint = btn.querySelector('.copy__hint');
+    btn.addEventListener('click', function () {
+      var txt = btn.getAttribute('data-copy');
+      function done(ok) {
+        hint.textContent = ok ? 'copiado!' : 'selecione e copie';
+        setTimeout(function () { hint.textContent = 'copiar'; }, 2200);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); });
+      } else { done(false); }
+    });
+  });
 
   /* ---------- Formulário ---------- */
   var form = $('contact-form'), status = $('form-status'), send = $('send');
