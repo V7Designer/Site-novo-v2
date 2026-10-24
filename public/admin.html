@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Vinícius Tavares</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0f1e; font-family: 'Segoe UI', monospace; color: #fff; }
+    .login-container { max-width: 400px; margin: 100px auto; background: #111827; padding: 40px; border-radius: 20px; border: 1px solid #00ffff33; box-shadow: 0 0 20px #00ffff22; }
+    .login-container h2 { text-align: center; color: #00ffff; margin-bottom: 30px; }
+    .login-container input { width: 100%; padding: 14px; margin: 10px 0; background: #1f2937; border: 1px solid #374151; border-radius: 12px; color: white; }
+    .login-container button { width: 100%; padding: 14px; background: linear-gradient(90deg, #00ffff, #0066ff); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+    .dashboard { display: none; }
+    .admin-header { background: #111827; padding: 20px; display: flex; justify-content: space-between; border-bottom: 1px solid #00ffff33; flex-wrap: wrap; gap: 15px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 20px; padding: 20px; }
+    .stat-card { background: #1f2937; padding: 20px; border-radius: 20px; text-align: center; border-left: 4px solid #00ffff; }
+    .stat-card .number { font-size: 32px; color: #00ffff; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #374151; vertical-align: top; }
+    th { background: #1f2937; color: #00ffff; }
+    td { word-break: break-word; white-space: normal; max-width: 300px; }
+    .mensagem-cell { max-width: 300px; word-wrap: break-word; white-space: normal; line-height: 1.4; }
+    .logout-btn { background: #ff0044; padding: 8px 20px; border: none; border-radius: 10px; cursor: pointer; }
+    .tabs-container { padding: 0 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .tab { background: #1f2937; padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; color: white; transition: 0.2s; }
+    .tab.active { background: #00ffff; color: #000; }
+    .tab-content { display: none; padding: 20px; }
+    .tab-content.active { display: block; }
+    .btn-delete { background: #ff0044; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; color: white; transition: 0.2s; }
+    .btn-delete:hover { background: #cc0033; }
+    .btn-success { background: #00aa44; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: white; }
+    .btn-primary { background: linear-gradient(90deg, #00ffff, #0066ff); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #000; font-weight: bold; }
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+    .status-finalizado { background: #00aa44; }
+    .status-pendente { background: #ff8800; }
+    .btn-finalizar { background: #00aa44; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; color: white; margin-right: 5px; }
+    .btn-finalizar:hover { background: #008833; }
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+    }
+    .modal-content {
+        background: #111827;
+        padding: 30px;
+        border-radius: 20px;
+        border: 1px solid #00ffff;
+        max-width: 500px;
+        width: 90%;
+    }
+    .modal-content input, .modal-content textarea, .modal-content select {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        background: #1f2937;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        color: white;
+    }
+    .modal-content label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0;
+        cursor: pointer;
+    }
+    .error-msg {
+        color: #ff6666;
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.8rem;
+    }
+    @media (max-width: 768px) { 
+        th, td { font-size: 0.7rem; padding: 6px; } 
+        .btn-delete, .btn-finalizar { padding: 3px 8px; font-size: 0.65rem; }
+        .mensagem-cell { max-width: 150px; }
+        .tabs-container { padding: 0 10px; }
+        .tab { padding: 6px 12px; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+<div id="login" class="login-container">
+  <h2><i class="fas fa-brain"></i> Vinícius Admin</h2>
+  <input type="text" id="username" placeholder="Usuário" value="">
+  <input type="password" id="password" placeholder="Senha" value="">
+  <button onclick="login()">Acessar Nível 5</button>
+  <div id="login-error" class="error-msg" style="display:none;">❌ Usuário ou senha inválidos</div>
+</div>
+
+<div id="dashboard" class="dashboard">
+  <div class="admin-header">
+    <h2><i class="fas fa-chart-line"></i> Painel de Controle - Futurista</h2>
+    <button class="logout-btn" onclick="logout()">Sair</button>
+  </div>
+  <div class="stats" id="stats"></div>
+  
+  <div class="tabs-container">
+    <button class="tab active" data-tab="leads">📩 Leads / Pedidos</button>
+    <button class="tab" data-tab="promocoes">🎯 Promoções</button>
+    <button class="tab" data-tab="projetos">📁 Projetos</button>
+  </div>
+  
+  <div id="leads" class="tab-content active">
+    <div style="overflow-x:auto;">
+      <table id="leads-table">
+        <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th>Telefone</th><th>Mensagem</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div id="promocoes" class="tab-content">
+    <button class="btn-primary" onclick="abrirModalPromocao()" style="margin-bottom: 20px;">+ Criar Nova Promoção</button>
+    <div style="overflow-x:auto;">
+      <table id="promocoes-table">
+        <thead><tr><th>ID</th><th>Título</th><th>De</th><th>Por</th><th>Bônus</th><th>Validade</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div id="projetos" class="tab-content">
+    <button class="btn-primary" onclick="abrirModalProjeto()" style="margin-bottom: 20px;">+ Adicionar Novo Projeto</button>
+    <div style="overflow-x:auto;">
+      <table id="projetos-table">
+        <thead>
+          <tr><th>ID</th><th>Nome</th><th>Descrição</th><th>Link</th><th>Destaque</th><th>Ações</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Promoção -->
+<div id="modalPromocao" class="modal">
+  <div class="modal-content">
+    <h3>🎯 Criar Promoção Relâmpago</h3>
+    <input type="hidden" id="promocao-id">
+    <input type="text" id="promocao-titulo" placeholder="Título (ex: 🔥 BLACK FRIDAY 🔥)">
+    <textarea id="promocao-descricao" placeholder="Descrição da promoção..." rows="2"></textarea>
+    <input type="text" id="promocao-preco-original" placeholder="Preço original (ex: R$ 800)">
+    <input type="text" id="promocao-preco-promo" placeholder="Preço promocional (ex: R$ 450)">
+    <input type="text" id="promocao-bonus" placeholder="Bônus (ex: + 1 mês de suporte grátis)">
+    <input type="datetime-local" id="promocao-validade">
+    <input type="color" id="promocao-cor" value="#ff3366">
+    <button class="btn-success" onclick="salvarPromocao()" style="width:100%; margin-top:10px;">Salvar Promoção</button>
+    <button onclick="fecharModalPromocao()" style="width:100%; margin-top:10px; padding:10px; background:#374151; border:none; border-radius:8px; color:white; cursor:pointer;">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal Projeto -->
+<div id="modalProjeto" class="modal">
+  <div class="modal-content">
+    <h3>📁 Adicionar/Editar Projeto</h3>
+    <input type="hidden" id="projeto-id">
+    <input type="text" id="projeto-nome" placeholder="Nome do projeto (ex: O Barretão)">
+    <textarea id="projeto-descricao" placeholder="Descrição do projeto..." rows="3"></textarea>
+    <input type="text" id="projeto-link" placeholder="Link do site (ex: https://...)" value="https://">
+    <input type="text" id="projeto-imagem" placeholder="URL da imagem (deixe em branco para usar padrão)">
+    <select id="projeto-categoria">
+        <option value="restaurante">Restaurante</option>
+        <option value="confeitaria">Confeitaria</option>
+        <option value="ecommerce">E-commerce</option>
+        <option value="outro">Outro</option>
+    </select>
+    <label>
+        <input type="checkbox" id="projeto-destaque"> Destacar no portfólio
+    </label>
+    <button class="btn-success" onclick="salvarProjeto()" style="width:100%; margin-top:10px;">Salvar Projeto</button>
+    <button onclick="fecharModalProjeto()" style="width:100%; margin-top:10px; padding:10px; background:#374151; border:none; border-radius:8px; color:white; cursor:pointer;">Cancelar</button>
+  </div>
+</div>
+
+<script>
+  let token = '';
+  let tentativas = 0;
+  const MAX_TENTATIVAS = 5;
+  
+  // Verificar se já tem sessão ativa (apenas na aba atual)
+  window.addEventListener('load', () => {
+    // NÃO carrega token automaticamente - segurança
+    // O usuário precisa logar a cada sessão
+  });
+  
+  async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('login-error');
+    
+    if (!username || !password) {
+      errorDiv.style.display = 'block';
+      errorDiv.innerText = '❌ Preencha usuário e senha';
+      return;
+    }
+    
+    try {
+      const res = await fetch('/api/admin/login', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ username, password }) 
+      });
+      
+      if (res.ok) { 
+        const data = await res.json(); 
+        token = data.token; 
+        // Salva token APENAS na memória (não no localStorage)
+        // Isso garante que ao fechar a aba, o login é perdido
+        document.getElementById('login').style.display = 'none'; 
+        document.getElementById('dashboard').style.display = 'block'; 
+        loadDashboard(); 
+        tentativas = 0;
+        errorDiv.style.display = 'none';
+      } else {
+        tentativas++;
+        errorDiv.style.display = 'block';
+        if (tentativas >= MAX_TENTATIVAS) {
+          errorDiv.innerText = '❌ Muitas tentativas. Aguarde 5 minutos.';
+          document.getElementById('username').disabled = true;
+          document.getElementById('password').disabled = true;
+          setTimeout(() => {
+            tentativas = 0;
+            document.getElementById('username').disabled = false;
+            document.getElementById('password').disabled = false;
+            errorDiv.innerText = '❌ Usuário ou senha inválidos';
+          }, 300000); // 5 minutos
+        } else {
+          errorDiv.innerText = `❌ Usuário ou senha inválidos (${MAX_TENTATIVAS - tentativas} tentativas restantes)`;
+        }
+      }
+    } catch(err) {
+      errorDiv.style.display = 'block';
+      errorDiv.innerText = '❌ Erro de conexão. Tente novamente.';
+    }
+  }
+  
+  function logout() { 
+    token = ''; 
+    // Limpa o formulário
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('login').style.display = 'block'; 
+    document.getElementById('dashboard').style.display = 'none'; 
+    document.getElementById('login-error').style.display = 'none';
+    // Recarrega a página para limpar qualquer estado
+    location.reload();
+  }
+  
+  async function loadDashboard() { 
+    if (!token) {
+      logout();
+      return;
+    }
+    
+    try {
+      const statsRes = await fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } }); 
+      if (statsRes.status === 403) {
+        logout();
+        return;
+      }
+      const stats = await statsRes.json();
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card"><div class="number">${stats.totalLeads}</div><p>Total de Leads</p></div>
+        <div class="stat-card"><div class="number">${stats.pendentes || 0}</div><p>Pendentes</p></div>
+        <div class="stat-card"><div class="number">${stats.finalizados || 0}</div><p>Finalizados</p></div>
+        <div class="stat-card"><div class="number">${stats.projetosTotal}</div><p>Projetos Portfólio</p></div>
+      `;
+      
+      await carregarLeads();
+      await carregarPromocoes();
+      await carregarProjetos();
+    } catch(err) {
+      console.error('Erro ao carregar dashboard:', err);
+      logout();
+    }
+  }
+  
+  function initTabs() {
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.getAttribute('data-tab');
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+  }
+  
+  async function carregarLeads() {
+    if (!token) return;
+    const res = await fetch('/api/admin/leads', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 403) { logout(); return; }
+    const leads = await res.json();
+    document.querySelector('#leads-table tbody').innerHTML = leads.map(l => `
+      <tr>
+        <td>${l.id}</td>
+        <td>${l.nome}</td>
+        <td>${l.email}</td>
+        <td>${l.telefone || '-'}</td>
+        <td class="mensagem-cell">${l.mensagem}</td>
+        <td><span class="status-badge ${l.status === 'finalizado' ? 'status-finalizado' : 'status-pendente'}">${l.status === 'finalizado' ? '✅ Finalizado' : '⏳ Pendente'}</span></td>
+        <td>${new Date(l.data).toLocaleString()}</td>
+        <td>
+          ${l.status !== 'finalizado' ? `<button class="btn-finalizar" onclick="finalizarLead(${l.id})">✓ Finalizar</button>` : ''}
+          <button class="btn-delete" onclick="deletarLead(${l.id})">🗑️ Excluir</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+  
+  async function finalizarLead(id) {
+    if (!confirm('Marcar este lead como FINALIZADO?')) return;
+    await fetch(`/api/admin/leads/${id}/finalizar`, { 
+      method: 'PUT', 
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } 
+    });
+    carregarLeads();
+    loadDashboard();
+  }
+  
+  async function deletarLead(id) {
+    if (!confirm('⚠️ Tem certeza que deseja EXCLUIR este lead permanentemente?')) return;
+    await fetch(`/api/admin/leads/${id}`, { 
+      method: 'DELETE', 
+      headers: { 'Authorization': `Bearer ${token}` } 
+    });
+    carregarLeads();
+    loadDashboard();
+  }
+  
+  // ========== FUNÇÕES DE PROMOÇÕES ==========
+  async function carregarPromocoes() {
+    if (!token) return;
+    const res = await fetch('/api/admin/promocoes', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 403) { logout(); return; }
+    const promocoes = await res.json();
+    document.querySelector('#promocoes-table tbody').innerHTML = promocoes.map(p => `
+      <tr>
+        <td>${p.id}</td>
+        <td>${p.titulo}</td>
+        <td>${p.preco_original}</td>
+        <td><span style="color:#ff3366; font-weight:bold;">${p.preco_promocional}</span></td>
+        <td>${p.bonus || '-'}</td>
+        <td>${new Date(p.data_validade).toLocaleString()}</td>
+        <td>${p.ativo === 1 ? '<span class="status-badge status-pendente">✅ Ativa</span>' : '<span class="status-badge status-finalizado">⛔ Inativa</span>'}</td>
+        <td>
+          <button class="btn-finalizar" onclick="togglePromocao(${p.id}, ${p.ativo})">${p.ativo === 1 ? 'Desativar' : 'Ativar'}</button>
+          <button class="btn-delete" onclick="deletarPromocao(${p.id})">🗑️ Excluir</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+  
+  function abrirModalPromocao() {
+    document.getElementById('modalPromocao').style.display = 'flex';
+    document.getElementById('promocao-id').value = '';
+    document.getElementById('promocao-titulo').value = '';
+    document.getElementById('promocao-descricao').value = '';
+    document.getElementById('promocao-preco-original').value = '';
+    document.getElementById('promocao-preco-promo').value = '';
+    document.getElementById('promocao-bonus').value = '';
+    const data = new Date();
+    data.setDate(data.getDate() + 2);
+    document.getElementById('promocao-validade').value = data.toISOString().slice(0, 16);
+  }
+  
+  function fecharModalPromocao() {
+    document.getElementById('modalPromocao').style.display = 'none';
+  }
+  
+  async function salvarPromocao() {
+    const promocao = {
+      titulo: document.getElementById('promocao-titulo').value,
+      descricao: document.getElementById('promocao-descricao').value,
+      preco_original: document.getElementById('promocao-preco-original').value,
+      preco_promocional: document.getElementById('promocao-preco-promo').value,
+      bonus: document.getElementById('promocao-bonus').value,
+      data_validade: document.getElementById('promocao-validade').value,
+      cor_destaque: document.getElementById('promocao-cor').value
+    };
+    await fetch('/api/admin/promocoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(promocao)
+    });
+    fecharModalPromocao();
+    carregarPromocoes();
+  }
+  
+  async function togglePromocao(id, ativoAtual) {
+    const novoStatus = ativoAtual === 1 ? 0 : 1;
+    await fetch(`/api/admin/promocoes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ ativo: novoStatus })
+    });
+    carregarPromocoes();
+  }
+  
+  async function deletarPromocao(id) {
+    if (!confirm('Excluir esta promoção permanentemente?')) return;
+    await fetch(`/api/admin/promocoes/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    carregarPromocoes();
+  }
+  
+  // ========== FUNÇÕES DE PROJETOS ==========
+  async function carregarProjetos() {
+    if (!token) return;
+    const res = await fetch('/api/admin/projetos', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 403) { logout(); return; }
+    const projetos = await res.json();
+    document.querySelector('#projetos-table tbody').innerHTML = projetos.map(p => `
+      <tr>
+        <td>${p.id}</td>
+        <td><strong>${p.nome}</strong></td>
+        <td style="max-width:250px; white-space:normal;">${p.descricao}</td>
+        <td><a href="${p.link}" target="_blank" style="color:#00ffff;">🔗 Ver</a></td>
+        <td>${p.destaque === 1 ? '⭐ Sim' : '❌ Não'}</td>
+        <td>
+          <button class="btn-finalizar" onclick="editarProjeto(${p.id})">✏️ Editar</button>
+          <button class="btn-delete" onclick="deletarProjeto(${p.id})">🗑️ Excluir</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+  
+  function abrirModalProjeto() {
+    document.getElementById('modalProjeto').style.display = 'flex';
+    document.getElementById('projeto-id').value = '';
+    document.getElementById('projeto-nome').value = '';
+    document.getElementById('projeto-descricao').value = '';
+    document.getElementById('projeto-link').value = 'https://';
+    document.getElementById('projeto-imagem').value = '';
+    document.getElementById('projeto-categoria').value = 'restaurante';
+    document.getElementById('projeto-destaque').checked = false;
+  }
+  
+  function fecharModalProjeto() {
+    document.getElementById('modalProjeto').style.display = 'none';
+  }
+  
+  async function editarProjeto(id) {
+    const res = await fetch('/api/admin/projetos', { headers: { 'Authorization': `Bearer ${token}` } });
+    const projetos = await res.json();
+    const projeto = projetos.find(p => p.id === id);
+    if (projeto) {
+      document.getElementById('projeto-id').value = projeto.id;
+      document.getElementById('projeto-nome').value = projeto.nome;
+      document.getElementById('projeto-descricao').value = projeto.descricao;
+      document.getElementById('projeto-link').value = projeto.link || 'https://';
+      document.getElementById('projeto-imagem').value = projeto.imagem || '';
+      document.getElementById('projeto-categoria').value = projeto.categoria || 'restaurante';
+      document.getElementById('projeto-destaque').checked = projeto.destaque === 1;
+      document.getElementById('modalProjeto').style.display = 'flex';
+    }
+  }
+  
+  async function salvarProjeto() {
+    const id = document.getElementById('projeto-id').value;
+    const projeto = {
+      nome: document.getElementById('projeto-nome').value,
+      descricao: document.getElementById('projeto-descricao').value,
+      link: document.getElementById('projeto-link').value,
+      imagem: document.getElementById('projeto-imagem').value,
+      categoria: document.getElementById('projeto-categoria').value,
+      destaque: document.getElementById('projeto-destaque').checked ? 1 : 0
+    };
+    
+    const url = id ? `/api/admin/projetos/${id}` : '/api/admin/projetos';
+    const method = id ? 'PUT' : 'POST';
+    
+    await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(projeto)
+    });
+    
+    fecharModalProjeto();
+    carregarProjetos();
+    loadDashboard();
+  }
+  
+  async function deletarProjeto(id) {
+    if (!confirm('⚠️ Excluir este projeto permanentemente?')) return;
+    await fetch(`/api/admin/projetos/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    carregarProjetos();
+    loadDashboard();
+  }
+  
+  initTabs();
+</script>
+</body>
+</html>
